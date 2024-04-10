@@ -1,4 +1,6 @@
 import { getChain, transfer } from './halonode'
+import { getChain2, transfer2 } from './halonode-dev'
+import { getContractor } from './GetContractor'
 import { userWalletAll } from '@/plugins/stores/modules/user-wallet'
 import { ref } from 'vue'
 import { connectWallet, signer } from '@/plugins/requests/ethers-connect'
@@ -345,5 +347,142 @@ export const unstakeAr = async(Pool,Amount) => {
   
 	} catch (error) {
 	  console.error('Error fetching data:', error)
+	}
+}
+
+
+
+export const votestoEth = async(isapprover, proposalID) => {
+	try {
+		const action = 'call'
+		const chainMes = await getChain2();
+		const params = {
+			"infavor": isapprover
+		}
+		const params_two = {
+			"proposalID": proposalID,
+			"function": "Vote",
+			"params": JSON.stringify(params),
+		}
+		const currentTimestamp = ref(Date.now())
+		//let Mes = 'dapp:' + chainMes.dapp + '\n' + 'chainID:' + chainMes.chainID + '\n' + 'action:' + action + '\n' + 'from:' + ToUser + '\n' + 'fee:' + chainMes.fee + '\n' + 'feeRecipient:' + chainMes.feeRecipient + '\n' + 'nonce:' + chainMes.nonce + '\n' + 'version:' + chainMes.version + '\n' + 'params:' + chainMes.params + '\n'
+		const Mes = 'dapp:' + chainMes.dapp + '\n' +
+				'chainID:' + chainMes.chainID + '\n' +
+				'action:' + action + '\n' +
+				'from:' + utils.getAddress(userWallet.walletAddress) + '\n' +
+				'fee:' + '0' + '\n' +
+				'feeRecipient:' + chainMes.feeRecipient.toString() + '\n' +
+				'nonce:' + currentTimestamp.value.toString() + '\n' +
+				'version:' + 'v1' + '\n' +
+				'params:' + JSON.stringify(params_two) + '\n';
+				
+		const a = await signer(Mes)
+
+
+		const postData = {
+			"action": "call",
+			"params": JSON.stringify(params_two),
+			"sig": a,
+			"from": utils.getAddress(userWallet.walletAddress),
+			"dapp": chainMes.dapp,
+			"chainID": chainMes.chainID,
+			"nonce": currentTimestamp.value.toString(),
+			"version": "v1",
+			"feeRecipient": chainMes.feeRecipient.toString(),
+			"fee": "0"
+		}
+		console.log("nogooods---")
+		console.log(postData)
+
+
+		try {
+			const response = await transfer2(JSON.stringify(postData));
+			// Processing Response
+			return response
+		} catch (error) {
+			// process error
+			console.log("-----test1bads");
+			console.error(error);
+			return error
+		}
+		//console.log("Mes:",Mes)
+		//console.log('Data from API:', chainMes);
+	
+	
+  
+	} catch (error) {
+	  console.error('Error fetching data:', error)
+	}
+}
+
+export const votestoAr = async(isapprover, proposalID) => {
+	try {
+		const action = 'call'
+		const chainMes = await getChain2();
+		const params = {
+			"infavor": isapprover
+		}
+		const params_two = {
+			"proposalID": proposalID,
+			"function": "Vote",
+			"params": JSON.stringify(params),
+		}
+		const currentTimestamp = ref(Date.now())
+		//let Mes = 'dapp:' + chainMes.dapp + '\n' + 'chainID:' + chainMes.chainID + '\n' + 'action:' + action + '\n' + 'from:' + ToUser + '\n' + 'fee:' + chainMes.fee + '\n' + 'feeRecipient:' + chainMes.feeRecipient + '\n' + 'nonce:' + chainMes.nonce + '\n' + 'version:' + chainMes.version + '\n' + 'params:' + chainMes.params + '\n'
+		const Mes = 'dapp:' + chainMes.dapp + '\n' +
+				'chainID:' + chainMes.chainID + '\n' +
+				'action:' + action + '\n' +
+				'from:' + userWallet.walletAddress + '\n' +
+				'fee:' + '0' + '\n' +
+				'feeRecipient:' + chainMes.feeRecipient.toString() + '\n' +
+				'nonce:' + currentTimestamp.value.toString() + '\n' +
+				'version:' + 'v1' + '\n' +
+				'params:' + JSON.stringify(params_two) + '\n';
+		const address = "test";
+		const a = await signMessageAsync ('false', 'use_wallet', address, Mes)
+		console.log(a)
+
+		const postData = {
+			"action": "call",
+			"params": JSON.stringify(params_two),
+			"sig": a,
+			"from": userWallet.walletAddress,
+			"dapp": chainMes.dapp,
+			"chainID": chainMes.chainID,
+			"nonce": currentTimestamp.value.toString(),
+			"version": "v1",
+			"feeRecipient": chainMes.feeRecipient.toString(),
+			"fee": "0"
+		}
+		
+
+		try {
+			const response = await transfer2(JSON.stringify(postData));
+			// Processing Response
+			return response
+		} catch (error) {
+			// process error
+			console.log("-----test1bads");
+			console.error(error);
+			return error
+		}
+		//console.log("Mes:",Mes)
+		//console.log('Data from API:', chainMes);
+	
+  
+  
+	} catch (error) {
+	  console.error('Error fetching data:', error)
+	}
+}
+
+
+
+export const getContractors = async(Address) => {
+	try {
+		const res = await getContractor(Address)
+		return res
+	} catch (error) {
+		console.error('Error fetching data:', error)
 	}
 }

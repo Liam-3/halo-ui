@@ -79,6 +79,8 @@
         </el-tag>
       <p></p>
       <el-card class="work-card" >
+
+        <!--  Transfer pages  -->
         <el-tabs class="el-tabs" v-model="selectedTab" :stretch="true">
           <el-tab-pane label="Transfer" name="1">
             <div v-if="selectedTab === '1'" class="bordered-container">
@@ -103,6 +105,7 @@
           </el-tab-pane>
 
 
+          <!--  Stake pages  -->
           <el-tab-pane label="Stake" name="2">
             <!-- Content for Stake tab -->
             <div v-if="selectedTab === '2'" class="bordered-container">
@@ -141,7 +144,7 @@
           </el-tab-pane>
 
 
-
+          <!--  unstake pages  -->
           <el-tab-pane label="Unstake" name="3">
             <!-- Content for Unstake tab -->
             <div v-if="selectedTab === '3'" class="bordered-container">
@@ -181,6 +184,29 @@
             </div>
           </el-tab-pane>
           
+
+
+          <!--  toupiao pages  -->
+          <el-tab-pane label="invoke" name="4">
+            <!-- Content for Unstake tab -->
+            <div v-if="selectedTab === '4'" class="bordered-container">
+
+              <div class="border"></div>
+              <el-text class="el_text" size="large" style="text-align: left;">Contractor</el-text>
+              <el-input v-model="ContractorAddress" placeholder="Address"></el-input>
+              
+              <div class="el_button_div">
+                <el-button
+                  type="primary"
+                  text
+                  class="el_button"
+                  round
+                  @click="SearchContractor"
+                  >Search</el-button>
+              </div>
+            </div>
+          </el-tab-pane>
+
         </el-tabs>
       </el-card>
     </el-main>
@@ -212,8 +238,120 @@
         </el-button>
         -->
       </div>
+    
+    </el-dialog>
 
-  </el-dialog>
+    <el-dialog
+      v-model="showContractor"
+      width="500"
+      align-center
+      class="dialog"
+      v-for="contractor in contractorInfo" :key="contractor.id"
+    >
+      <Text style=" font-size: 35px; font-weight: bold; color: #666699; font-family: Arial, sans-serif; letter-spacing: 1px">Contractor Info</Text>
+      <el-descriptions
+        class="margin-top"
+        title="w"
+        :column="1"
+        :size="Default"
+        
+        border
+      >
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <user />
+              </el-icon>
+              Name
+            </div>
+          </template>
+          {{ contractor.name }}
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <iphone />
+              </el-icon>
+              description
+            </div>
+          </template>
+          {{ contractor.description }}
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <location />
+              </el-icon>
+              infavor
+            </div>
+          </template>
+          {{ contractor.infavor / 10**18 }}
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <tickets />
+              </el-icon>
+              minVoteDuration
+            </div>
+          </template>
+          {{ contractor.minVoteDuration / 60 / 60 / 24}} day
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <tickets />
+              </el-icon>
+              maxVoteDuration
+            </div>
+          </template>
+          {{ contractor.maxVoteDuration / 60 / 60 / 24}} day
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <tickets />
+              </el-icon>
+              confirmDuration
+            </div>
+          </template>
+          {{ contractor.confirmDuration / 60 / 60 / 24}} day
+        </el-descriptions-item>
+        <el-descriptions-item label-class-name="votes_label" class-name="votes">
+          <template #label>
+            <div class="cell-item">
+              <el-icon :style="iconStyle">
+                <tickets />
+              </el-icon>
+              approved_status
+            </div>
+          </template>
+          {{ contractor.approved ? 'approve' : 'fail' }} 
+        </el-descriptions-item>
+      </el-descriptions>
+      
+
+      <el-radio-group
+        v-model="aggresor" 
+        class="ml-4"
+      >
+        <el-radio label="true" size="large">agree</el-radio>
+        <el-radio label="false" size="large">disagree</el-radio>
+      </el-radio-group>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="vote(aggresor)">
+            Vote
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
   </el-container>
 </template>
@@ -232,7 +370,7 @@ import { userWalletAll } from '@/plugins/stores/modules/user-wallet'
 
 import { ethers, providers, utils } from 'ethers';
 
-import { transferToEth, transferToAr, stakeEth, stakeAr, unstakeEth, unstakeAr } from '../plugins/requests/request'
+import { transferToEth, transferToAr, stakeEth, stakeAr, unstakeEth, unstakeAr, getContractors, votestoEth, votestoAr } from '../plugins/requests/request'
 
 import { Decimal } from 'decimal.js'
 import BigNumber from 'bignumber.js';
@@ -274,6 +412,9 @@ const ToUser = ref('');
 const Amount = ref('');
 const stakeAmount = ref(''); //Number of stake
 const unstakeAmount = ref('');
+const ContractorAddress = ref('');
+const showContractor = ref(false);
+
 const selectedTab = ref('1');
 
 const PoolSelect = ref('');
@@ -366,13 +507,13 @@ const stakeIn = async() => {
     const res = await stakeEth(PoolSelect.value, stakeNum.toString())
     if (res.everHash) {
       ElNotification({
-        title: 'Transfer Success',
+        title: 'Stake Success',
         message: `response is: ${res.everHash}`,
         type: 'success',
       })
     } else {
       ElNotification({
-        title: 'Transfer Failed',
+        title: 'Stake Failed',
         message: `response is: ${res.response.data}`,
         type: 'error',
       })
@@ -383,13 +524,13 @@ const stakeIn = async() => {
     const res = await stakeAr(PoolSelect.value, stakeNum.toString())
     if (res.everHash) {
       ElNotification({
-        title: 'Transfer Success',
+        title: 'Stake Success',
         message: `response is: ${res.everHash}`,
         type: 'success',
       })
     } else {
       ElNotification({
-        title: 'Transfer Failed',
+        title: 'Stake Failed',
         message: `response is: ${res.response.data}`,
         type: 'error',
       })
@@ -411,13 +552,13 @@ const unstakeOut = async() => {
     const res = await unstakeEth(PoolSelect.value, unstakeNum.toString());
     if (res.everHash) {
       ElNotification({
-        title: 'Transfer Success',
+        title: 'Unstake Success',
         message: `response is: ${res.everHash}`,
         type: 'success',
       });
     } else {
       ElNotification({
-        title: 'Transfer Failed',
+        title: 'Unstake Failed',
         message: `response is: ${res.response.data}`,
         type: 'error',
       });
@@ -427,13 +568,13 @@ const unstakeOut = async() => {
     const res = await unstakeAr(PoolSelect.value, unstakeNum.toString())
     if (res.everHash) {
       ElNotification({
-        title: 'Transfer Success',
+        title: 'Unstake Success',
         message: `response is: ${res.everHash}`,
         type: 'success',
       })
     } else {
       ElNotification({
-        title: 'Transfer Failed',
+        title: 'Unstake Failed',
         message: `response is: ${res.response.data}`,
         type: 'error',
       })
@@ -444,6 +585,61 @@ const unstakeOut = async() => {
     location.reload()
   }, 5000);
 }
+
+//voteaction
+const vote = async(isapprover) => {
+  const walletType = userWallet.walletType;
+  console.log("test---------")
+  
+  if (walletType === 'Eth') {
+    const res = await votestoEth(isapprover, ContractorAddress.value);
+    if (res.everHash) {
+      ElNotification({
+        title: 'Vote Success',
+        message: `response is: ${res.everHash}`,
+        type: 'success',
+      });
+    } else {
+      ElNotification({
+        title: 'Vote Failed',
+        message: `response is: ${res.response.data}`,
+        type: 'error',
+      });
+    }
+  }
+  if ( walletType === 'Ar' ) {
+    const res = await votestoAr(isapprover, ContractorAddress.value)
+    if (res.everHash) {
+      ElNotification({
+        title: 'Vote Success',
+        message: `response is: ${res.everHash}`,
+        type: 'success',
+      })
+    } else {
+      ElNotification({
+        title: 'Vote Failed',
+        message: `response is: ${res.response.data}`,
+        type: 'error',
+      })
+    }
+  }
+  // Wait 5 seconds to trigger an interface refresh
+
+}
+
+
+const contractorInfo = ref([]);  // contract Info
+const aggresor = ref('true');       //vote is or not
+const SearchContractor = async() => {
+  console.log("nogoods")
+  console.log(ContractorAddress.value)
+  showContractor.value = true
+  const res = await getContractors(ContractorAddress.value)
+  const localStateObj = JSON.parse(res.executor.localState);
+  contractorInfo.value = [localStateObj]
+}
+
+
 
 // Listen for changes to the count variable
 watch(isConnect.value, () => {
@@ -707,4 +903,32 @@ async function isWalletConnect() {
   width: 200px;
 }
 
+
+
+.el-radio__input.is-checked + .el-radio__label {
+  color: #28d4c1 !important;
+}
+/* 选中后小圆点的颜色 */
+.el-radio__input.is-checked .el-radio__inner {
+  background: #28d4c1 !important;
+  border-color: #28d4c1 !important;
+}
+
+
+
+
+
+
+:deep(.votes) {
+  background: #161E1B !important;
+  color: white !important;
+  text-align: left !important;
+}
+
+:deep(.votes_label) {
+  background: #161E1B !important;
+  color: white !important;
+  text-align: left !important;
+  width: 39% !important;
+}
 </style>
